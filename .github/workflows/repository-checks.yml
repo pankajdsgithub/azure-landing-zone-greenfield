@@ -40,6 +40,12 @@ jobs:
       - name: Validate governance environment
         run: terraform -chdir=terraform/environments/governance validate
 
+      - name: Initialize state backend bootstrap
+        run: terraform -chdir=terraform/bootstrap/state-backend init -backend=false
+
+      - name: Validate state backend bootstrap
+        run: terraform -chdir=terraform/bootstrap/state-backend validate
+
   structure:
     name: Validate repository structure
     runs-on: ubuntu-latest
