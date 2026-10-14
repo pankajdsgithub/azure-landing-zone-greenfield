@@ -11,17 +11,48 @@ permissions:
   contents: read
 
 jobs:
+  terraform-quality:
+    name: Terraform Quality Gates
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.16.2
+          terraform_wrapper: false
+
+      - name: Check Terraform formatting
+        run: terraform fmt -check -recursive
+
+      - name: Initialize platform environment
+        run: terraform -chdir=terraform/environments/platform init -backend=false
+
+      - name: Validate platform environment
+        run: terraform -chdir=terraform/environments/platform validate
+
+      - name: Initialize governance environment
+        run: terraform -chdir=terraform/environments/governance init -backend=false
+
+      - name: Validate governance environment
+        run: terraform -chdir=terraform/environments/governance validate
+
   structure:
     name: Validate repository structure
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Check required documentation
         shell: bash
         run: |
           set -euo pipefail
+
           required_files=(
             README.md
             docs/architecture.md
@@ -47,11 +78,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if find . -path './.git' -prune -o \
-            -type f \( -name 'terraform.tfstate' \
-            -o -name 'terraform.tfstate.backup' \) -print \
-            | grep -q .; then
+
+          if git ls-files | grep -E '(^|/)(terraform\.tfstate|terraform\.tfstate\.backup)$'; then
             echo "::error::Terraform state files must not be committed."
             exit 1
           fi
-          echo "No Terraform state files found."
+
+          echo "No tracked Terraform state files found."
