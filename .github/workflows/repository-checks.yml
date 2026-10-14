@@ -1,0 +1,57 @@
+name: Repository Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  structure:
+    name: Validate repository structure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check required documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          required_files=(
+            README.md
+            docs/architecture.md
+            docs/design-decisions.md
+            docs/deployment-guide.md
+            architecture/landing-zone-flow.mmd
+            terraform/bootstrap/README.md
+            terraform/modules/management-groups/README.md
+            terraform/environments/README.md
+            policies/README.md
+            examples/README.md
+          )
+
+          for file in "${required_files[@]}"; do
+            if [[ ! -s "$file" ]]; then
+              echo "::error::Required file missing or empty: $file"
+              exit 1
+            fi
+            echo "OK: $file"
+          done
+
+      - name: Check for committed Terraform state files
+        shell: bash
+        run: |
+          set -euo pipefail
+          if find . -path './.git' -prune -o \
+            -type f \( -name 'terraform.tfstate' \
+            -o -name 'terraform.tfstate.backup' \) -print \
+            | grep -q .; then
+            echo "::error::Terraform state files must not be committed."
+            exit 1
+          fi
+          echo "No Terraform state files found."

@@ -1,153 +1,109 @@
-# Enterprise Azure Landing Zone — Greenfield
+# Azure Landing Zone — Greenfield Enterprise Platform
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Cloud-Microsoft_Azure-0078D4?style=for-the-badge&logo=microsoftazure&logoColor=white" alt="Microsoft Azure"/>
-  <img src="https://img.shields.io/badge/IaC-Terraform-7B42BC?style=for-the-badge&logo=terraform&logoColor=white" alt="Terraform"/>
-  <img src="https://img.shields.io/badge/Focus-Platform_Engineering-175CD3?style=for-the-badge" alt="Platform Engineering"/>
-  <img src="https://img.shields.io/badge/Status-In_Progress-orange?style=for-the-badge" alt="In Progress"/>
-</p>
+[![Repository Checks](https://github.com/pankajdsgithub/azure-landing-zone-greenfield/actions/workflows/repository-checks.yml/badge.svg)](https://github.com/pankajdsgithub/azure-landing-zone-greenfield/actions/workflows/repository-checks.yml)
 
-## Overview
+A documentation-first blueprint for designing a secure, governed, scalable
+Azure enterprise platform using Azure Landing Zone principles and Terraform.
 
-An enterprise-oriented reference implementation for building a secure, governed, and scalable Microsoft Azure Landing Zone from scratch using Terraform.
-
-The goal is to establish reusable cloud foundations before application teams deploy workloads. The design separates governance, identity, connectivity, management, and workload subscriptions while promoting infrastructure as code and repeatable deployments.
-
-> **Project status:** Initial repository and documentation setup. Architecture and Terraform components will be implemented and validated incrementally. This repository does not yet claim a production-ready landing zone.
+> **Current status:** Repository foundation and architecture documentation.
+> Azure resources have not been deployed by this project setup.
 
 ## Objectives
 
-- Establish an enterprise management group and subscription hierarchy.
-- Apply Azure Policy and governance guardrails.
-- Define identity, access control, and least-privilege practices.
-- Design centralized connectivity and private networking.
-- Establish logging, monitoring, and security-management foundations.
-- Automate infrastructure provisioning using reusable Terraform modules.
-- Support separate development, test, and production environments.
+- Establish a clear management-group and subscription hierarchy.
+- Separate platform services from application landing zones.
+- Standardize identity, connectivity, management and governance.
+- Prepare a modular Terraform structure for future implementation.
+- Introduce repeatable repository checks before infrastructure deployment.
 
 ## Target Architecture
 
-```mermaid
-flowchart TB
-    A["Microsoft Entra ID<br/>Identity and Access"] --> B["Azure Tenant"]
-    B --> C["Management Groups"]
-    C --> D["Platform"]
-    C --> E["Landing Zones"]
-    C --> F["Sandbox"]
-
-    D --> G["Connectivity Subscription"]
-    D --> H["Management Subscription"]
-    E --> I["Production Workloads"]
-    E --> J["Non-Production Workloads"]
-
-    K["Azure Policy<br/>Governance and Compliance"] -.-> C
-    L["Terraform<br/>Repeatable Provisioning"] --> C
-    L --> G
-    L --> H
-    L --> I
-    L --> J
-
-    G --> M["Hub Network<br/>Firewall / Private DNS"]
-    H --> N["Central Logging<br/>Monitoring and Security"]
+```text
+Microsoft Entra ID Tenant
+└── Tenant Root Management Group
+    ├── Platform
+    │   ├── Identity
+    │   ├── Connectivity
+    │   └── Management
+    └── Landing Zones
+        ├── Corp
+        ├── Online
+        └── Sandbox (optional)
 ```
 
-*This is the target logical architecture, not a diagram of already deployed Azure resources. Exact hierarchy, connectivity, and policy assignments will be finalized during implementation.*
-
-## Architecture Workstreams
-
-| Workstream | Scope |
-|---|---|
-| Management hierarchy | Management groups, subscription placement, environment separation |
-| Governance | Azure Policy, policy initiatives, tagging and allowed-region controls |
-| Identity and access | Microsoft Entra ID, Azure RBAC, managed identities |
-| Connectivity | Hub-and-spoke design, routing, private DNS, private endpoints |
-| Management | Centralized diagnostics, Log Analytics, monitoring and alerting |
-| Infrastructure as Code | Terraform modules, providers, variables, outputs and remote state |
-| CI/CD | Terraform formatting, validation, planning, review and controlled deployment |
+The exact hierarchy, subscription placement and policy assignments will be
+validated against organizational requirements before implementation.
 
 ## Repository Structure
 
 ```text
-azure-landing-zone-greenfield/
+.
 ├── README.md
-├── .gitignore
 ├── LICENSE
+├── .gitignore
+├── .github/
+│   └── workflows/
+│       └── repository-checks.yml
+├── architecture/
+│   └── landing-zone-flow.mmd
 ├── docs/
 │   ├── architecture.md
 │   ├── design-decisions.md
 │   └── deployment-guide.md
-├── architecture/
-│   └── landing-zone-flow.mmd
-├── terraform/
-│   ├── bootstrap/
-│   ├── modules/
-│   │   ├── management-groups/
-│   │   ├── policy/
-│   │   ├── identity/
-│   │   ├── connectivity/
-│   │   └── monitoring/
-│   └── environments/
-│       ├── dev/
-│       ├── test/
-│       └── prod/
-├── policies/
 ├── examples/
-└── .github/
-    └── workflows/
-        └── terraform-validate.yml
+│   └── README.md
+├── policies/
+│   └── README.md
+└── terraform/
+    ├── bootstrap/
+    │   └── README.md
+    ├── environments/
+    │   └── README.md
+    └── modules/
+        └── management-groups/
+            └── README.md
 ```
 
-*The structure above is the planned layout. Directories and implementation files will be added as the project progresses.*
+## Architecture and Design
 
-## Terraform Engineering Standards
+| Document | Purpose |
+|---|---|
+| [Architecture](docs/architecture.md) | Target hierarchy and platform boundaries |
+| [Design Decisions](docs/design-decisions.md) | Design principles and trade-offs |
+| [Deployment Guide](docs/deployment-guide.md) | Planned implementation sequence |
+| [Architecture Diagram](architecture/landing-zone-flow.mmd) | Diagram source in Mermaid format |
+| [Terraform Bootstrap](terraform/bootstrap/README.md) | State and bootstrap design |
+| [Management Groups Module](terraform/modules/management-groups/README.md) | Planned module responsibilities |
+| [Environments](terraform/environments/README.md) | Future environment layout |
+| [Policy Framework](policies/README.md) | Governance design |
+| [Examples](examples/README.md) | Future examples and usage guidance |
 
-- Pin supported Terraform and provider versions.
-- Use reusable modules with explicit inputs and outputs.
-- Keep environment-specific configuration separate from module logic.
-- Store Terraform state remotely with access controls, locking support, and recovery safeguards.
-- Never commit state files, secrets, credentials, or sensitive variable values.
-- Run `terraform fmt -check`, `terraform init -backend=false`, and `terraform validate` where applicable.
-- Review `terraform plan` before any infrastructure-changing apply.
-- Use pull-request review and least-privilege deployment identities.
+## Planned Implementation Phases
 
-## Security Principles
+1. Confirm tenant hierarchy, naming standards and governance requirements.
+2. Review Terraform state, identity and bootstrap prerequisites.
+3. Design management-group and subscription provisioning.
+4. Define platform foundations for identity, connectivity and management.
+5. Introduce policy assignments, RBAC and security guardrails.
+6. Add environment-specific infrastructure and CI/CD workflows.
+7. Validate, review and document changes before any deployment.
 
-1. **Secure by default:** minimize public exposure and enforce private connectivity where required.
-2. **Least privilege:** grant only the access necessary for each role and workload.
-3. **Governance as code:** manage policy definitions and assignments through version-controlled configuration.
-4. **Separation of duties:** separate development, approval, and production deployment permissions.
-5. **Auditable changes:** track infrastructure changes through source control and deployment logs.
-6. **No committed secrets:** use approved secret-management and workload-identity mechanisms.
+## Engineering Principles
 
-## Implementation Roadmap
+- Least privilege and separation of duties.
+- Infrastructure as Code and reusable modules.
+- Explicit environment configuration.
+- Secure state management and secret handling.
+- Change review, validation and traceability.
+- No deployment without an approved plan and appropriate permissions.
 
-- [ ] Phase 1 — Document target architecture and design decisions.
-- [ ] Phase 2 — Establish Terraform bootstrap and remote state.
-- [ ] Phase 3 — Implement management group hierarchy.
-- [ ] Phase 4 — Implement Azure Policy and governance controls.
-- [ ] Phase 5 — Implement identity and RBAC foundations.
-- [ ] Phase 6 — Implement connectivity and private networking.
-- [ ] Phase 7 — Implement monitoring and diagnostic settings.
-- [ ] Phase 8 — Add CI/CD validation and controlled deployment workflows.
-- [ ] Phase 9 — Validate modules, security controls, and environment deployments.
+## Current Scope
 
-## Validation
+This repository is being prepared in documentation-first mode. The folder
+structure and design documents do not imply that Terraform modules are
+implemented or that Azure resources exist.
 
-Terraform components will be validated incrementally using formatting, initialization, validation, plan review, and applicable policy/security checks.
+## Contributions
 
-A successful local validation does not by itself prove that the architecture is deployed or production-ready.
-
-## Disclaimer
-
-This is an engineering reference project for learning, demonstration, and adaptation. Production adoption requires environment-specific security reviews, subscription and networking design, policy approval, cost assessment, and operational readiness checks.
-
-## Author
-
-**Pankaj Kumar Tiwari**  
-DevSecOps Architecture | Azure Platform Engineering | Infrastructure as Code
-
-- GitHub: [@pankajdsgithub](https://github.com/pankajdsgithub)
-
----
-
-*Building secure, governed, reusable, and automated cloud foundations.*
+Changes should be reviewed for security, naming consistency, documentation
+quality and Terraform validation requirements before implementation.

@@ -1,0 +1,27 @@
+flowchart TB
+    Tenant["Microsoft Entra ID Tenant"]
+    Root["Tenant Root Management Group"]
+
+    Tenant --> Root
+
+    Root --> Platform["Platform"]
+    Root --> LandingZones["Landing Zones"]
+
+    Platform --> Identity["Identity"]
+    Platform --> Connectivity["Connectivity"]
+    Platform --> Management["Management"]
+
+    LandingZones --> Corp["Corp"]
+    LandingZones --> Online["Online"]
+    LandingZones -. "Optional" .-> Sandbox["Sandbox"]
+
+    Identity:::platform
+    Connectivity:::platform
+    Management:::platform
+    Corp:::landing
+    Online:::landing
+    Sandbox:::optional
+
+    classDef platform fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    classDef landing fill:#dcfce7,stroke:#16a34a,color:#14532d
+    classDef optional fill:#f3f4f6,stroke:#6b7280,color:#374151
