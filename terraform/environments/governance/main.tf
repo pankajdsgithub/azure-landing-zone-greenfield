@@ -16,3 +16,14 @@ module "environment_tag_assignment" {
   management_group_id  = var.assignment_management_group_id
   policy_definition_id = module.environment_tag_policy.policy_definition_id
 }
+
+module "environment_tag_initiative" {
+  source = "../../modules/policy-initiative"
+
+  initiative_name     = "environment-tag-governance"
+  display_name        = "Environment Tag Governance"
+  description         = "Groups policies for auditing required environment tags."
+  management_group_id = var.definition_management_group_id
+
+  policy_definition_id = module.environment_tag_policy.policy_definition_id
+}

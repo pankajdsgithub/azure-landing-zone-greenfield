@@ -7,3 +7,13 @@ output "policy_assignment_id" {
   description = "ID of the Environment tag policy assignment."
   value       = module.environment_tag_assignment.policy_assignment_id
 }
+
+output "policy_initiative_id" {
+  description = "ID of the Environment Tag Governance initiative."
+  value       = module.environment_tag_initiative.initiative_id
+}
+
+output "policy_initiative_name" {
+  description = "Name of the Environment Tag Governance initiative."
+  value       = module.environment_tag_initiative.initiative_name
+}
