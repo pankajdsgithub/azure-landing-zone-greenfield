@@ -63,5 +63,9 @@ __blobstorage__/
 __queuestorage__/
 __tablestorage__/
 
-printf '\n' >> .gitignore
-git add .gitignore
+.venv-checkov/
+
+# Local Terraform backend configuration
+terraform/bootstrap/state-backend/backend.hcl
+terraform/environments/platform/backend.hcl
+terraform/environments/governance/backend.hcl
