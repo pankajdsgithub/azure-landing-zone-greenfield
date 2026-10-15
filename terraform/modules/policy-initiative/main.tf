@@ -1,4 +1,4 @@
-resource "azurerm_management_group_policy_set_definition" "policy_initiative" {
+resource "azurerm_management_group_policy_set_definition" "this" {
   name                = var.initiative_name
   policy_type         = "Custom"
   display_name        = var.display_name
