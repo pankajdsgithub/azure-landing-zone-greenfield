@@ -1,0 +1,10 @@
+# Copy this file to terraform.tfvars and replace the example values.
+
+subscription_id      = "00000000-0000-0000-0000-000000000000"
+location             = "Central India"
+resource_group_name  = "rg-tfstate-example-ci"
+storage_account_name = "sttfstateexample001"
+
+# Replace with your real public IPv4 address.
+# Use a single IPv4 address without /32.
+approved_client_ip_rules = ["REPLACE_WITH_YOUR_PUBLIC_IPV4"]
