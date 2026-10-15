@@ -25,6 +25,11 @@ jobs:
           terraform_version: 1.16.2
           terraform_wrapper: false
 
+      - name: Set up TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.62.1
+
       - name: Check Terraform formatting
         run: terraform fmt -check -recursive
 
@@ -46,6 +51,22 @@ jobs:
       - name: Validate state backend bootstrap
         run: terraform -chdir=terraform/bootstrap/state-backend validate
 
+      - name: Lint platform environment
+        run: tflint --chdir=terraform/environments/platform
+
+      - name: Lint governance environment
+        run: tflint --chdir=terraform/environments/governance
+
+      - name: Lint state backend bootstrap
+        run: tflint --chdir=terraform/bootstrap/state-backend
+
+      - name: Scan Terraform with Checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: terraform
+          framework: terraform
+          soft_fail: true
+
   structure:
     name: Validate repository structure
     runs-on: ubuntu-latest
@@ -64,6 +85,7 @@ jobs:
             docs/architecture.md
             docs/design-decisions.md
             docs/deployment-guide.md
+            docs/rbac-security-review.md
             architecture/landing-zone-flow.mmd
             terraform/bootstrap/README.md
             terraform/modules/management-groups/README.md
