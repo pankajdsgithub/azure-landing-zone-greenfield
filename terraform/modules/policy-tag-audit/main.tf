@@ -13,12 +13,12 @@ resource "azurerm_policy_definition" "require_environment_tag" {
   })
 
   policy_rule = jsonencode({
-    if = {
+    "if" = {
       field  = "tags['${var.tag_name}']"
       exists = "false"
     }
 
-    then = {
+    "then" = {
       effect = "Audit"
     }
   })
