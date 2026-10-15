@@ -7,6 +7,16 @@ resource "azurerm_resource_group" "tfstate" {
     Environment = "NonProd"
     Purpose     = "TerraformRemoteState"
     ManagedBy   = "Terraform"
+
+    # Subscription-level policy requirements
+    Criticality        = "Low"
+    DataClassification = "Internal"
+
+    # mg-railconnect policy requirements
+    Application  = "RailConnect"
+    Owner        = "PlatformEngineering"
+    CostCenter   = "CC-IT-001"
+    BusinessUnit = "Technology"
   }
 
   lifecycle {

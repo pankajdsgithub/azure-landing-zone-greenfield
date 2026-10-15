@@ -56,3 +56,12 @@ crash.*.log
 
 # Terraform local working directory
 **/.terraform/*
+
+# Local Azurite Storage Emulator artifacts
+__azurite_db_*.json
+__blobstorage__/
+__queuestorage__/
+__tablestorage__/
+
+printf '\n' >> .gitignore
+git add .gitignore
