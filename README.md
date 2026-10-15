@@ -2,19 +2,22 @@
 
 [![Repository Checks](https://github.com/pankajdsgithub/azure-landing-zone-greenfield/actions/workflows/repository-checks.yml/badge.svg)](https://github.com/pankajdsgithub/azure-landing-zone-greenfield/actions/workflows/repository-checks.yml)
 
-A documentation-first blueprint for designing a secure, governed, scalable
-Azure enterprise platform using Azure Landing Zone principles and Terraform.
+A Terraform-based blueprint for building a secure, governed and scalable
+Azure enterprise platform using Azure Landing Zone principles.
 
-> **Current status:** Repository foundation and architecture documentation.
-> Azure resources have not been deployed by this project setup.
+> **Project status:** Terraform configurations and reusable modules cover
+> management groups, RBAC and Azure Policy governance. Hub-Spoke networking
+> remains a planned extension. This repository update does not deploy Azure
+> resources.
 
 ## Objectives
 
-- Establish a clear management-group and subscription hierarchy.
-- Separate platform services from application landing zones.
-- Standardize identity, connectivity, management and governance.
-- Prepare a modular Terraform structure for future implementation.
-- Introduce repeatable repository checks before infrastructure deployment.
+- Organize platform and landing-zone management groups.
+- Separate governance, platform configuration and bootstrap responsibilities.
+- Reuse Terraform modules for management groups and Azure Policy.
+- Apply RBAC using configurable assignments.
+- Run automated formatting, validation and security checks.
+- Document architecture, state management and implementation decisions.
 
 ## Target Architecture
 
@@ -31,79 +34,103 @@ Microsoft Entra ID Tenant
         └── Sandbox (optional)
 ```
 
-The exact hierarchy, subscription placement and policy assignments will be
-validated against organizational requirements before implementation.
+This is the target design, not a claim that every component is implemented.
+Final hierarchy and subscription placement must be confirmed for each tenant.
 
 ## Repository Structure
 
 ```text
 .
-├── README.md
-├── LICENSE
-├── .gitignore
-├── .github/
-│   └── workflows/
-│       └── repository-checks.yml
+├── .github/workflows/
+│   └── repository-checks.yml
 ├── architecture/
 │   └── landing-zone-flow.mmd
 ├── docs/
 │   ├── architecture.md
 │   ├── design-decisions.md
-│   └── deployment-guide.md
+│   ├── deployment-guide.md
+│   ├── governance/
+│   │   └── tag-audit.md
+│   ├── rbac-security-review.md
+│   └── terraform-remote-state-backend.md
 ├── examples/
 │   └── README.md
 ├── policies/
 │   └── README.md
 └── terraform/
     ├── bootstrap/
-    │   └── README.md
+    │   └── state-backend/
     ├── environments/
-    │   └── README.md
+    │   ├── governance/
+    │   └── platform/
     └── modules/
-        └── management-groups/
-            └── README.md
+        ├── management-groups/
+        ├── policy-assignment/
+        ├── policy-initiative/
+        └── policy-tag-audit/
 ```
 
-## Architecture and Design
+## Architecture and Documentation
 
 | Document | Purpose |
 |---|---|
 | [Architecture](docs/architecture.md) | Target hierarchy and platform boundaries |
 | [Design Decisions](docs/design-decisions.md) | Design principles and trade-offs |
-| [Deployment Guide](docs/deployment-guide.md) | Planned implementation sequence |
-| [Architecture Diagram](architecture/landing-zone-flow.mmd) | Diagram source in Mermaid format |
-| [Terraform Bootstrap](terraform/bootstrap/README.md) | State and bootstrap design |
-| [Management Groups Module](terraform/modules/management-groups/README.md) | Planned module responsibilities |
-| [Environments](terraform/environments/README.md) | Future environment layout |
-| [Policy Framework](policies/README.md) | Governance design |
-| [Examples](examples/README.md) | Future examples and usage guidance |
+| [Deployment Guide](docs/deployment-guide.md) | Implementation sequence and precautions |
+| [Architecture Diagram](architecture/landing-zone-flow.mmd) | Mermaid diagram source |
+| [Terraform Bootstrap](terraform/bootstrap/README.md) | State-backend bootstrap guidance |
+| [Environments](terraform/environments/README.md) | Environment configuration layout |
+| [Management Groups Module](terraform/modules/management-groups/README.md) | Reusable management-group module |
+| [Policy Framework](policies/README.md) | Governance documentation |
+| [Tag Audit](docs/governance/tag-audit.md) | Environment-tag audit policy |
+| [RBAC Security Review](docs/rbac-security-review.md) | Role assignment review |
+| [Remote State](docs/terraform-remote-state-backend.md) | State-backend design |
+| [Examples](examples/README.md) | Example usage guidance |
+
+## Validation and CI
+
+The repository workflow is designed to check:
+
+- Terraform formatting.
+- Terraform initialization and validation.
+- TFLint static analysis.
+- Checkov security and configuration checks.
+- Required documentation and accidental Terraform state tracking.
+
+Passing static checks does not guarantee that a configuration is correct
+for every Azure tenant. Review provider versions, permissions, policy scopes
+and the proposed Terraform plan before any approved deployment.
 
 ## Planned Implementation Phases
 
-1. Confirm tenant hierarchy, naming standards and governance requirements.
-2. Review Terraform state, identity and bootstrap prerequisites.
-3. Design management-group and subscription provisioning.
-4. Define platform foundations for identity, connectivity and management.
-5. Introduce policy assignments, RBAC and security guardrails.
-6. Add environment-specific infrastructure and CI/CD workflows.
-7. Validate, review and document changes before any deployment.
+1. Review management-group hierarchy and governance requirements.
+2. Verify bootstrap prerequisites and remote-state configuration.
+3. Review management-group and subscription configuration.
+4. Improve reusable identity, connectivity and management foundations.
+5. Review policy definitions, initiatives, assignments and RBAC.
+6. Validate code through local checks and GitHub Actions.
+7. Document review findings and deployment prerequisites.
 
 ## Engineering Principles
 
 - Least privilege and separation of duties.
-- Infrastructure as Code and reusable modules.
-- Explicit environment configuration.
-- Secure state management and secret handling.
-- Change review, validation and traceability.
-- No deployment without an approved plan and appropriate permissions.
+- Reusable Infrastructure as Code.
+- Explicit environment-specific configuration.
+- Secure handling of state, credentials and configuration.
+- Reviewed changes and traceable validation.
+- No Azure deployment without explicit approval.
 
-## Current Scope
+## Scope and Limitations
 
-This repository is being prepared in documentation-first mode. The folder
-structure and design documents do not imply that Terraform modules are
-implemented or that Azure resources exist.
+**Implemented in the repository:** management-group, policy-definition,
+policy-initiative, policy-assignment and RBAC Terraform configurations.
 
-## Contributions
+**Future enhancement:** Hub-Spoke networking and additional platform services.
 
-Changes should be reviewed for security, naming consistency, documentation
-quality and Terraform validation requirements before implementation.
+Actual resource availability, permissions, policy effects and state alignment
+must be verified in the target environment. Do not commit state files, plan
+files, credentials, real environment-specific `.tfvars` or backend settings.
+
+## License
+
+See [LICENSE](LICENSE).
