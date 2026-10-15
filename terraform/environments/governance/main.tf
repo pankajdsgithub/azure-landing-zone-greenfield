@@ -14,7 +14,7 @@ module "environment_tag_assignment" {
   display_name         = "Audit missing Environment tag"
   description          = "Audits resources that do not have the Environment tag."
   management_group_id  = var.assignment_management_group_id
-  policy_definition_id = module.environment_tag_policy.policy_definition_id
+  policy_definition_id = module.environment_tag_initiative.initiative_id
 }
 
 module "environment_tag_initiative" {

@@ -33,6 +33,12 @@ jobs:
       - name: Check Terraform formatting
         run: terraform fmt -check -recursive
 
+      - name: Initialize management-groups environment
+        run: terraform -chdir=terraform/environments/management-groups init -backend=false
+
+      - name: Validate management-groups environment
+        run: terraform -chdir=terraform/environments/management-groups validate
+
       - name: Initialize platform environment
         run: terraform -chdir=terraform/environments/platform init -backend=false
 
@@ -50,6 +56,9 @@ jobs:
 
       - name: Validate state backend bootstrap
         run: terraform -chdir=terraform/bootstrap/state-backend validate
+
+      - name: Lint management-groups environment
+        run: tflint --chdir=terraform/environments/management-groups
 
       - name: Lint platform environment
         run: tflint --chdir=terraform/environments/platform

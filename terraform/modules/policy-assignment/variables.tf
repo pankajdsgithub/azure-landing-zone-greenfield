@@ -14,7 +14,7 @@ variable "management_group_id" {
 }
 
 variable "policy_definition_id" {
-  description = "Resource ID of the policy definition to assign."
+  description = "Resource ID of the policy definition or policy initiative to assign."
   type        = string
 }
 

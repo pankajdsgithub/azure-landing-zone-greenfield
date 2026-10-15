@@ -1,0 +1,8 @@
+# Replace with an existing Azure subscription UUID.
+subscription_id = "00000000-0000-0000-0000-000000000000"
+
+# Custom policy definition and initiative scope.
+definition_management_group_id = "/providers/Microsoft.Management/managementGroups/mg-landing-zones"
+
+# Policy assignment scope. Child groups inherit this assignment.
+assignment_management_group_id = "/providers/Microsoft.Management/managementGroups/mg-landing-zones"

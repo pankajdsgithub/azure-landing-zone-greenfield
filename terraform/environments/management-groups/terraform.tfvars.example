@@ -1,0 +1,8 @@
+# Replace with values from your authorized Azure tenant.
+subscription_id = "REPLACE_WITH_EXISTING_SUBSCRIPTION_UUID"
+
+# Existing tenant root Management Group resource ID.
+tenant_root_management_group_id = "/providers/Microsoft.Management/managementGroups/REPLACE_WITH_TENANT_ROOT_ID"
+
+# Optional; disabled by default.
+create_sandbox = false

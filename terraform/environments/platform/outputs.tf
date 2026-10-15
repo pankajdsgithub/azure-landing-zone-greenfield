@@ -1,9 +1,4 @@
-output "management_group_ids" {
-  description = "Resource IDs of the platform child Management Groups."
-
-  value = {
-    identity     = module.identity.id
-    connectivity = module.connectivity.id
-    management   = module.management.id
-  }
-}
+# Management Group outputs are maintained by:
+# terraform/environments/management-groups
+#
+# Platform RBAC configuration is maintained in rbac.tf.
