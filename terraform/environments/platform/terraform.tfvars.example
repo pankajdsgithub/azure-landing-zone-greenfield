@@ -1,0 +1,24 @@
+subscription_id = "REPLACE_WITH_SUBSCRIPTION_ID"
+
+rbac_assignments = {
+  app_devs_compute_contributor = {
+    resource_group_name  = "REPLACE_WITH_COMPUTE_RG"
+    role_definition_name = "Contributor"
+    principal_id         = "REPLACE_WITH_APP_DEVS_GROUP_OBJECT_ID"
+    principal_type       = "Group"
+  }
+
+  dba_sql_db_contributor = {
+    resource_group_name  = "REPLACE_WITH_DATA_RG"
+    role_definition_name = "SQL DB Contributor"
+    principal_id         = "REPLACE_WITH_DBA_GROUP_OBJECT_ID"
+    principal_type       = "Group"
+  }
+
+  secops_key_vault_admin = {
+    resource_group_name  = "REPLACE_WITH_SECURITY_RG"
+    role_definition_name = "Key Vault Administrator"
+    principal_id         = "REPLACE_WITH_SECOPS_GROUP_OBJECT_ID"
+    principal_type       = "Group"
+  }
+}
