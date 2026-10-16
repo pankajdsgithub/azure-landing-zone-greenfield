@@ -1,0 +1,13 @@
+# Replace with the subscription containing the target scope.
+subscription_id = "00000000-0000-0000-0000-000000000000"
+
+# No role assignments are enabled by default.
+# Add an assignment only after reviewing the target scope and principal:
+#
+# role_assignments = {
+#   platform_reader = {
+#     scope                = "/subscriptions/REPLACE_WITH_SUBSCRIPTION_ID"
+#     role_definition_name = "Reader"
+#     principal_id         = "REPLACE_WITH_ENTRA_OBJECT_ID"
+#   }
+# }

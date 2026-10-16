@@ -1,0 +1,12 @@
+# Replace with your intended Azure subscription ID before planning.
+subscription_id = "00000000-0000-0000-0000-000000000000"
+
+location            = "centralindia"
+resource_group_name = "rg-alz-networking"
+
+# Verify both ranges against ALL existing VNets and on-premises networks.
+hub_address_space   = ["10.40.0.0/16"]
+hub_subnet_prefixes = ["10.40.1.0/24"]
+
+spoke_address_space   = ["10.41.0.0/16"]
+spoke_subnet_prefixes = ["10.41.1.0/24"]
