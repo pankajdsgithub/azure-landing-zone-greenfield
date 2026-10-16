@@ -24,9 +24,9 @@ infrastructure information.
 
 | Setting | Value |
 |---|---|
-| Azure subscription | `8de31583-5018-4d87-9fa1-2a74a001bb25` |
-| Resource Group | `rg-tfstate-railconnect-ci` |
-| Storage Account | `sttfstatepankaj2026ci` |
+| Azure subscription | `<YOUR_SUBSCRIPTION_ID>` |
+| Resource Group | `rg-tfstate-example-ci` |
+| Storage Account | `sttfstateexample001` |
 | Blob Container | `tfstate` |
 | Region | Central India |
 | Authentication | Azure CLI |
@@ -85,7 +85,7 @@ Check Blob access:
 
 ```bash
 az storage blob list \
-  --account-name sttfstatepankaj2026ci \
+  --account-name sttfstateexample001 \
   --container-name tfstate \
   --auth-mode login \
   --query "[].name" \
@@ -102,8 +102,8 @@ Run the command from the relevant stack directory.
 cd ~/workspace/azure-landing-zone-greenfield/terraform/environments/platform
 
 terraform init -migrate-state \
-  -backend-config="resource_group_name=rg-tfstate-railconnect-ci" \
-  -backend-config="storage_account_name=sttfstatepankaj2026ci" \
+  -backend-config="resource_group_name=rg-tfstate-example-ci" \
+  -backend-config="storage_account_name=sttfstateexample001" \
   -backend-config="container_name=tfstate" \
   -backend-config="key=platform.tfstate" \
   -backend-config="use_cli=true"
@@ -115,8 +115,8 @@ terraform init -migrate-state \
 cd ~/workspace/azure-landing-zone-greenfield/terraform/environments/governance
 
 terraform init -migrate-state \
-  -backend-config="resource_group_name=rg-tfstate-railconnect-ci" \
-  -backend-config="storage_account_name=sttfstatepankaj2026ci" \
+  -backend-config="resource_group_name=rg-tfstate-example-ci" \
+  -backend-config="storage_account_name=sttfstateexample001" \
   -backend-config="container_name=tfstate" \
   -backend-config="key=governance.tfstate" \
   -backend-config="use_cli=true"
@@ -128,8 +128,8 @@ terraform init -migrate-state \
 cd ~/workspace/azure-landing-zone-greenfield/terraform/bootstrap/state-backend
 
 terraform init -migrate-state \
-  -backend-config="resource_group_name=rg-tfstate-railconnect-ci" \
-  -backend-config="storage_account_name=sttfstatepankaj2026ci" \
+  -backend-config="resource_group_name=rg-tfstate-example-ci" \
+  -backend-config="storage_account_name=sttfstateexample001" \
   -backend-config="container_name=tfstate" \
   -backend-config="key=bootstrap.tfstate" \
   -backend-config="use_cli=true"
@@ -161,7 +161,7 @@ Verify the state blobs:
 
 ```bash
 az storage blob list \
-  --account-name sttfstatepankaj2026ci \
+  --account-name sttfstateexample001 \
   --container-name tfstate \
   --auth-mode login \
   --query "[].name" \

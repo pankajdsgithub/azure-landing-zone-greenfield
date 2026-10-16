@@ -4,6 +4,7 @@
 import argparse
 import ipaddress
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -71,40 +72,49 @@ def validate(config):
 
 
 def read_terraform_values(var_file):
-    expression = (
-        'jsonencode({'
-        'hub_address_space=var.hub_address_space,'
-        'hub_subnet_prefixes=var.hub_subnet_prefixes,'
-        'spoke_address_space=var.spoke_address_space,'
-        'spoke_subnet_prefixes=var.spoke_subnet_prefixes'
-        '})'
+    """Read the four CIDR list inputs without initializing Terraform."""
+    path = Path(var_file)
+    if not path.is_file():
+        raise RuntimeError(f"Variable file not found: {path}")
+
+    text = path.read_text()
+    names = (
+        "hub_address_space",
+        "hub_subnet_prefixes",
+        "spoke_address_space",
+        "spoke_subnet_prefixes",
     )
-    command = [
-        "terraform", f"-chdir={TF_DIR}", "console",
-        f"-var-file={var_file}",
-    ]
-    result = subprocess.run(
-        command, input=expression + "\n", text=True,
-        capture_output=True, check=False,
-    )
-    if result.returncode:
-        raise RuntimeError(result.stderr.strip() or "terraform console failed")
-    try:
-        parsed = json.loads(result.stdout.strip())
+    config = {}
 
-        # Terraform console may return JSON encoded as a quoted string.
-        if isinstance(parsed, str):
-            parsed = json.loads(parsed)
+    for name in names:
+        matches = []
+        for line in text.splitlines():
+            if "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            value = value.strip()
+            if key.strip() == name and value.startswith("[") and value.endswith("]"):
+                matches.append(value[1:-1])
+        if len(matches) != 1:
+            raise ValueError(
+                f"Expected exactly one list assignment for {name} in {path}"
+            )
 
-        if not isinstance(parsed, dict):
-            raise ValueError("Expected a JSON object from terraform console")
+        try:
+            values = json.loads("[" + matches[0] + "]")
+        except json.JSONDecodeError as exc:
+            raise ValueError(
+                f"{name} must be a quoted-string list in {path}: {exc}"
+            ) from exc
 
-        return parsed
-    except (json.JSONDecodeError, ValueError) as exc:
-        raise RuntimeError(
-            f"Could not parse terraform console output: {result.stdout!r}"
-        ) from exc
+        if not isinstance(values, list) or not all(
+            isinstance(value, str) for value in values
+        ):
+            raise ValueError(f"{name} must contain only quoted CIDR strings")
 
+        config[name] = values
+
+    return config
 
 def self_test():
     valid = {

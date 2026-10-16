@@ -1,0 +1,362 @@
+name: Terraform Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      root:
+        description: Terraform root to plan and deploy
+        required: true
+        type: choice
+        options:
+          - management-groups
+          - platform
+          - governance
+          - identity
+          - networking
+          - corp
+          - online
+      confirm_production:
+        description: Type DEPLOY to permit the protected apply job to proceed
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: terraform-deploy-${{ inputs.root }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    name: Plan (${{ inputs.root }})
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    env:
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      TF_IN_AUTOMATION: "true"
+    steps:
+      - name: Block deployments from public repositories
+        shell: bash
+        env:
+          REPOSITORY_PRIVATE: ${{ github.event.repository.private }}
+        run: |
+          set -euo pipefail
+          if [[ "$REPOSITORY_PRIVATE" != "true" ]]; then
+            echo "::error::This deployment workflow is disabled for public repositories."
+            echo "Make the repository private before using Azure deployment."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure root-specific Terraform variables
+        shell: bash
+        env:
+          ROOT: ${{ inputs.root }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          TENANT_ROOT_MANAGEMENT_GROUP_ID: ${{ vars.TENANT_ROOT_MANAGEMENT_GROUP_ID }}
+          DEFINITION_MANAGEMENT_GROUP_ID: ${{ vars.DEFINITION_MANAGEMENT_GROUP_ID }}
+          ASSIGNMENT_MANAGEMENT_GROUP_ID: ${{ vars.ASSIGNMENT_MANAGEMENT_GROUP_ID }}
+          PLATFORM_RBAC_ASSIGNMENTS_JSON: ${{ vars.PLATFORM_RBAC_ASSIGNMENTS_JSON }}
+          IDENTITY_ROLE_ASSIGNMENTS_JSON: ${{ vars.IDENTITY_ROLE_ASSIGNMENTS_JSON }}
+          CORP_RESOURCE_GROUP_NAME: ${{ vars.CORP_RESOURCE_GROUP_NAME }}
+          CORP_VNET_NAME: ${{ vars.CORP_VNET_NAME }}
+          CORP_ADDRESS_SPACE_JSON: ${{ vars.CORP_ADDRESS_SPACE_JSON }}
+          CORP_SUBNET_PREFIXES_JSON: ${{ vars.CORP_SUBNET_PREFIXES_JSON }}
+          ONLINE_RESOURCE_GROUP_NAME: ${{ vars.ONLINE_RESOURCE_GROUP_NAME }}
+          ONLINE_VNET_NAME: ${{ vars.ONLINE_VNET_NAME }}
+          ONLINE_ADDRESS_SPACE_JSON: ${{ vars.ONLINE_ADDRESS_SPACE_JSON }}
+          ONLINE_SUBNET_PREFIXES_JSON: ${{ vars.ONLINE_SUBNET_PREFIXES_JSON }}
+        run: |
+          set -euo pipefail
+
+          : "${AZURE_SUBSCRIPTION_ID:?Set repository variable AZURE_SUBSCRIPTION_ID}"
+          printf 'TF_VAR_subscription_id=%s\n' "$AZURE_SUBSCRIPTION_ID" >> "$GITHUB_ENV"
+
+          case "$ROOT" in
+            management-groups)
+              : "${TENANT_ROOT_MANAGEMENT_GROUP_ID:?Set TENANT_ROOT_MANAGEMENT_GROUP_ID}"
+              printf 'TF_VAR_tenant_root_management_group_id=%s\n' "$TENANT_ROOT_MANAGEMENT_GROUP_ID" >> "$GITHUB_ENV"
+              ;;
+            platform)
+              : "${PLATFORM_RBAC_ASSIGNMENTS_JSON:?Set PLATFORM_RBAC_ASSIGNMENTS_JSON to valid JSON}"
+              printf 'TF_VAR_rbac_assignments=%s\n' "$PLATFORM_RBAC_ASSIGNMENTS_JSON" >> "$GITHUB_ENV"
+              ;;
+            governance)
+              : "${DEFINITION_MANAGEMENT_GROUP_ID:?Set DEFINITION_MANAGEMENT_GROUP_ID}"
+              : "${ASSIGNMENT_MANAGEMENT_GROUP_ID:?Set ASSIGNMENT_MANAGEMENT_GROUP_ID}"
+              printf 'TF_VAR_definition_management_group_id=%s\n' "$DEFINITION_MANAGEMENT_GROUP_ID" >> "$GITHUB_ENV"
+              printf 'TF_VAR_assignment_management_group_id=%s\n' "$ASSIGNMENT_MANAGEMENT_GROUP_ID" >> "$GITHUB_ENV"
+              ;;
+            identity)
+              if [[ -n "$IDENTITY_ROLE_ASSIGNMENTS_JSON" ]]; then
+                printf 'TF_VAR_role_assignments=%s\n' "$IDENTITY_ROLE_ASSIGNMENTS_JSON" >> "$GITHUB_ENV"
+              fi
+              ;;
+            networking)
+              # Other networking variables use their Terraform defaults.
+              ;;
+            corp)
+              : "${CORP_RESOURCE_GROUP_NAME:?Set CORP_RESOURCE_GROUP_NAME}"
+              : "${CORP_VNET_NAME:?Set CORP_VNET_NAME}"
+              : "${CORP_ADDRESS_SPACE_JSON:?Set CORP_ADDRESS_SPACE_JSON as a JSON array}"
+              : "${CORP_SUBNET_PREFIXES_JSON:?Set CORP_SUBNET_PREFIXES_JSON as a JSON array}"
+              printf 'TF_VAR_resource_group_name=%s\n' "$CORP_RESOURCE_GROUP_NAME" >> "$GITHUB_ENV"
+              printf 'TF_VAR_vnet_name=%s\n' "$CORP_VNET_NAME" >> "$GITHUB_ENV"
+              printf 'TF_VAR_address_space=%s\n' "$CORP_ADDRESS_SPACE_JSON" >> "$GITHUB_ENV"
+              printf 'TF_VAR_subnet_prefixes=%s\n' "$CORP_SUBNET_PREFIXES_JSON" >> "$GITHUB_ENV"
+              ;;
+            online)
+              : "${ONLINE_RESOURCE_GROUP_NAME:?Set ONLINE_RESOURCE_GROUP_NAME}"
+              : "${ONLINE_VNET_NAME:?Set ONLINE_VNET_NAME}"
+              : "${ONLINE_ADDRESS_SPACE_JSON:?Set ONLINE_ADDRESS_SPACE_JSON as a JSON array}"
+              : "${ONLINE_SUBNET_PREFIXES_JSON:?Set ONLINE_SUBNET_PREFIXES_JSON as a JSON array}"
+              printf 'TF_VAR_resource_group_name=%s\n' "$ONLINE_RESOURCE_GROUP_NAME" >> "$GITHUB_ENV"
+              printf 'TF_VAR_vnet_name=%s\n' "$ONLINE_VNET_NAME" >> "$GITHUB_ENV"
+              printf 'TF_VAR_address_space=%s\n' "$ONLINE_ADDRESS_SPACE_JSON" >> "$GITHUB_ENV"
+              printf 'TF_VAR_subnet_prefixes=%s\n' "$ONLINE_SUBNET_PREFIXES_JSON" >> "$GITHUB_ENV"
+              ;;
+            *)
+              echo "::error::Unsupported Terraform root"
+              exit 1
+              ;;
+          esac
+
+      - name: Validate dispatch confirmation and inputs
+        shell: bash
+        env:
+          SELECTED_ROOT: ${{ inputs.root }}
+          CONFIRM_PRODUCTION: ${{ inputs.confirm_production }}
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == "refs/heads/main" ]] || {
+            echo "Deployments can only be dispatched from main."
+            exit 1
+          }
+          [[ "$CONFIRM_PRODUCTION" == "DEPLOY" ]] || {
+            echo "Type DEPLOY in the confirmation field."
+            exit 1
+          }
+          case "$SELECTED_ROOT" in
+            management-groups|platform|governance|identity|networking|corp|online) ;;
+            *) echo "Unsupported Terraform root"; exit 1 ;;
+          esac
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.16.2"
+          terraform_wrapper: false
+
+      - name: Azure login using OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Initialize selected root
+        shell: bash
+        env:
+          ROOT: ${{ inputs.root }}
+          STATE_RG: ${{ vars.TF_STATE_RESOURCE_GROUP }}
+          STATE_ACCOUNT: ${{ vars.TF_STATE_STORAGE_ACCOUNT }}
+          STATE_CONTAINER: ${{ vars.TF_STATE_CONTAINER }}
+        run: |
+          set -euo pipefail
+          test -n "$STATE_RG"
+          test -n "$STATE_ACCOUNT"
+          test -n "$STATE_CONTAINER"
+          cd "terraform/environments/$ROOT"
+          terraform init -input=false \
+            -backend-config="resource_group_name=$STATE_RG" \
+            -backend-config="storage_account_name=$STATE_ACCOUNT" \
+            -backend-config="container_name=$STATE_CONTAINER" \
+            -backend-config="key=$ROOT.tfstate" \
+            -backend-config="use_oidc=true" \
+            -backend-config="use_azuread_auth=true"
+
+      - name: Validate selected root
+        shell: bash
+        env:
+          ROOT: ${{ inputs.root }}
+        run: |
+          set -euo pipefail
+          cd "terraform/environments/$ROOT"
+          terraform validate
+
+      - name: Create saved plan
+        shell: bash
+        env:
+          ROOT: ${{ inputs.root }}
+        run: |
+          set -euo pipefail
+          cd "terraform/environments/$ROOT"
+          terraform plan -input=false -lock-timeout=5m -out=tfplan
+
+      - name: Upload exact plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan-${{ inputs.root }}-${{ github.run_id }}
+          path: terraform/environments/${{ inputs.root }}/tfplan
+          if-no-files-found: error
+          retention-days: 1
+
+  apply:
+    name: Apply approved plan (${{ inputs.root }})
+    needs: plan
+    runs-on: ubuntu-latest
+    # Configure required reviewers for this Environment in repository settings.
+    environment:
+      name: production
+    if: github.ref == 'refs/heads/main' && inputs.confirm_production == 'DEPLOY'
+    env:
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      TF_IN_AUTOMATION: "true"
+    steps:
+      - name: Block deployments from public repositories
+        shell: bash
+        env:
+          REPOSITORY_PRIVATE: ${{ github.event.repository.private }}
+        run: |
+          set -euo pipefail
+          if [[ "$REPOSITORY_PRIVATE" != "true" ]]; then
+            echo "::error::This deployment workflow is disabled for public repositories."
+            echo "Make the repository private before using Azure deployment."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure root-specific Terraform variables
+        shell: bash
+        env:
+          ROOT: ${{ inputs.root }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          TENANT_ROOT_MANAGEMENT_GROUP_ID: ${{ vars.TENANT_ROOT_MANAGEMENT_GROUP_ID }}
+          DEFINITION_MANAGEMENT_GROUP_ID: ${{ vars.DEFINITION_MANAGEMENT_GROUP_ID }}
+          ASSIGNMENT_MANAGEMENT_GROUP_ID: ${{ vars.ASSIGNMENT_MANAGEMENT_GROUP_ID }}
+          PLATFORM_RBAC_ASSIGNMENTS_JSON: ${{ vars.PLATFORM_RBAC_ASSIGNMENTS_JSON }}
+          IDENTITY_ROLE_ASSIGNMENTS_JSON: ${{ vars.IDENTITY_ROLE_ASSIGNMENTS_JSON }}
+          CORP_RESOURCE_GROUP_NAME: ${{ vars.CORP_RESOURCE_GROUP_NAME }}
+          CORP_VNET_NAME: ${{ vars.CORP_VNET_NAME }}
+          CORP_ADDRESS_SPACE_JSON: ${{ vars.CORP_ADDRESS_SPACE_JSON }}
+          CORP_SUBNET_PREFIXES_JSON: ${{ vars.CORP_SUBNET_PREFIXES_JSON }}
+          ONLINE_RESOURCE_GROUP_NAME: ${{ vars.ONLINE_RESOURCE_GROUP_NAME }}
+          ONLINE_VNET_NAME: ${{ vars.ONLINE_VNET_NAME }}
+          ONLINE_ADDRESS_SPACE_JSON: ${{ vars.ONLINE_ADDRESS_SPACE_JSON }}
+          ONLINE_SUBNET_PREFIXES_JSON: ${{ vars.ONLINE_SUBNET_PREFIXES_JSON }}
+        run: |
+          set -euo pipefail
+
+          : "${AZURE_SUBSCRIPTION_ID:?Set repository variable AZURE_SUBSCRIPTION_ID}"
+          printf 'TF_VAR_subscription_id=%s\n' "$AZURE_SUBSCRIPTION_ID" >> "$GITHUB_ENV"
+
+          case "$ROOT" in
+            management-groups)
+              : "${TENANT_ROOT_MANAGEMENT_GROUP_ID:?Set TENANT_ROOT_MANAGEMENT_GROUP_ID}"
+              printf 'TF_VAR_tenant_root_management_group_id=%s\n' "$TENANT_ROOT_MANAGEMENT_GROUP_ID" >> "$GITHUB_ENV"
+              ;;
+            platform)
+              : "${PLATFORM_RBAC_ASSIGNMENTS_JSON:?Set PLATFORM_RBAC_ASSIGNMENTS_JSON to valid JSON}"
+              printf 'TF_VAR_rbac_assignments=%s\n' "$PLATFORM_RBAC_ASSIGNMENTS_JSON" >> "$GITHUB_ENV"
+              ;;
+            governance)
+              : "${DEFINITION_MANAGEMENT_GROUP_ID:?Set DEFINITION_MANAGEMENT_GROUP_ID}"
+              : "${ASSIGNMENT_MANAGEMENT_GROUP_ID:?Set ASSIGNMENT_MANAGEMENT_GROUP_ID}"
+              printf 'TF_VAR_definition_management_group_id=%s\n' "$DEFINITION_MANAGEMENT_GROUP_ID" >> "$GITHUB_ENV"
+              printf 'TF_VAR_assignment_management_group_id=%s\n' "$ASSIGNMENT_MANAGEMENT_GROUP_ID" >> "$GITHUB_ENV"
+              ;;
+            identity)
+              if [[ -n "$IDENTITY_ROLE_ASSIGNMENTS_JSON" ]]; then
+                printf 'TF_VAR_role_assignments=%s\n' "$IDENTITY_ROLE_ASSIGNMENTS_JSON" >> "$GITHUB_ENV"
+              fi
+              ;;
+            networking)
+              # Other networking variables use their Terraform defaults.
+              ;;
+            corp)
+              : "${CORP_RESOURCE_GROUP_NAME:?Set CORP_RESOURCE_GROUP_NAME}"
+              : "${CORP_VNET_NAME:?Set CORP_VNET_NAME}"
+              : "${CORP_ADDRESS_SPACE_JSON:?Set CORP_ADDRESS_SPACE_JSON as a JSON array}"
+              : "${CORP_SUBNET_PREFIXES_JSON:?Set CORP_SUBNET_PREFIXES_JSON as a JSON array}"
+              printf 'TF_VAR_resource_group_name=%s\n' "$CORP_RESOURCE_GROUP_NAME" >> "$GITHUB_ENV"
+              printf 'TF_VAR_vnet_name=%s\n' "$CORP_VNET_NAME" >> "$GITHUB_ENV"
+              printf 'TF_VAR_address_space=%s\n' "$CORP_ADDRESS_SPACE_JSON" >> "$GITHUB_ENV"
+              printf 'TF_VAR_subnet_prefixes=%s\n' "$CORP_SUBNET_PREFIXES_JSON" >> "$GITHUB_ENV"
+              ;;
+            online)
+              : "${ONLINE_RESOURCE_GROUP_NAME:?Set ONLINE_RESOURCE_GROUP_NAME}"
+              : "${ONLINE_VNET_NAME:?Set ONLINE_VNET_NAME}"
+              : "${ONLINE_ADDRESS_SPACE_JSON:?Set ONLINE_ADDRESS_SPACE_JSON as a JSON array}"
+              : "${ONLINE_SUBNET_PREFIXES_JSON:?Set ONLINE_SUBNET_PREFIXES_JSON as a JSON array}"
+              printf 'TF_VAR_resource_group_name=%s\n' "$ONLINE_RESOURCE_GROUP_NAME" >> "$GITHUB_ENV"
+              printf 'TF_VAR_vnet_name=%s\n' "$ONLINE_VNET_NAME" >> "$GITHUB_ENV"
+              printf 'TF_VAR_address_space=%s\n' "$ONLINE_ADDRESS_SPACE_JSON" >> "$GITHUB_ENV"
+              printf 'TF_VAR_subnet_prefixes=%s\n' "$ONLINE_SUBNET_PREFIXES_JSON" >> "$GITHUB_ENV"
+              ;;
+            *)
+              echo "::error::Unsupported Terraform root"
+              exit 1
+              ;;
+          esac
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.16.2"
+          terraform_wrapper: false
+
+      - name: Azure login using OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Initialize selected root
+        shell: bash
+        env:
+          ROOT: ${{ inputs.root }}
+          STATE_RG: ${{ vars.TF_STATE_RESOURCE_GROUP }}
+          STATE_ACCOUNT: ${{ vars.TF_STATE_STORAGE_ACCOUNT }}
+          STATE_CONTAINER: ${{ vars.TF_STATE_CONTAINER }}
+        run: |
+          set -euo pipefail
+          test -n "$STATE_RG"
+          test -n "$STATE_ACCOUNT"
+          test -n "$STATE_CONTAINER"
+          cd "terraform/environments/$ROOT"
+          terraform init -input=false \
+            -backend-config="resource_group_name=$STATE_RG" \
+            -backend-config="storage_account_name=$STATE_ACCOUNT" \
+            -backend-config="container_name=$STATE_CONTAINER" \
+            -backend-config="key=$ROOT.tfstate" \
+            -backend-config="use_oidc=true" \
+            -backend-config="use_azuread_auth=true"
+
+      - name: Download the exact plan generated by the plan job
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-plan-${{ inputs.root }}-${{ github.run_id }}
+          path: terraform/environments/${{ inputs.root }}
+
+      - name: Apply the approved saved plan
+        shell: bash
+        env:
+          ROOT: ${{ inputs.root }}
+        run: |
+          set -euo pipefail
+          cd "terraform/environments/$ROOT"
+          test -s tfplan
+          terraform apply -input=false -lock-timeout=5m tfplan

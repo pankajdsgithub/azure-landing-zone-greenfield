@@ -51,11 +51,29 @@ jobs:
       - name: Validate governance environment
         run: terraform -chdir=terraform/environments/governance validate
 
+      - name: Initialize identity environment
+        run: terraform -chdir=terraform/environments/identity init -backend=false
+
+      - name: Validate identity environment
+        run: terraform -chdir=terraform/environments/identity validate
+
       - name: Initialize networking environment
         run: terraform -chdir=terraform/environments/networking init -backend=false
 
       - name: Validate networking environment
         run: terraform -chdir=terraform/environments/networking validate
+
+      - name: Initialize corp environment
+        run: terraform -chdir=terraform/environments/corp init -backend=false
+
+      - name: Validate corp environment
+        run: terraform -chdir=terraform/environments/corp validate
+
+      - name: Initialize online environment
+        run: terraform -chdir=terraform/environments/online init -backend=false
+
+      - name: Validate online environment
+        run: terraform -chdir=terraform/environments/online validate
 
       - name: Check networking CIDR validation
         run: |
@@ -77,8 +95,17 @@ jobs:
       - name: Lint governance environment
         run: tflint --chdir=terraform/environments/governance
 
+      - name: Lint identity environment
+        run: tflint --chdir=terraform/environments/identity
+
       - name: Lint networking environment
         run: tflint --chdir=terraform/environments/networking
+
+      - name: Lint corp environment
+        run: tflint --chdir=terraform/environments/corp
+
+      - name: Lint online environment
+        run: tflint --chdir=terraform/environments/online
 
       - name: Lint state backend bootstrap
         run: tflint --chdir=terraform/bootstrap/state-backend
@@ -113,6 +140,8 @@ jobs:
             terraform/bootstrap/README.md
             terraform/modules/management-groups/README.md
             terraform/environments/README.md
+            terraform/environments/corp/README.md
+            terraform/environments/online/README.md
             policies/README.md
             examples/README.md
           )

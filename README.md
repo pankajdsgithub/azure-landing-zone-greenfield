@@ -134,3 +134,27 @@ files, credentials, real environment-specific `.tfvars` or backend settings.
 ## License
 
 See [LICENSE](LICENSE).
+
+
+<!-- implementation-status-v1 -->
+## Implementation Status
+
+This repository is an evolving Azure landing-zone implementation. The presence
+of a Terraform root or module does not mean it has been deployed or production
+validated.
+
+| Capability | Current status |
+|---|---|
+| Management-group hierarchy | Terraform root present; review plan before changing an existing hierarchy |
+| Environment-tag governance | Custom audit policy and assignment present |
+| Identity RBAC | Input-driven role-assignment roots present; review scopes and principal IDs |
+| Hub/spoke networking | Basic VNets, subnets, NSGs, and peering present |
+| Terraform state bootstrap | Template present; bootstrap/state migration needs a separately reviewed process |
+| Repository CI checks | Validation and security-check workflow present |
+| Azure Firewall, VPN/ExpressRoute, Bastion | Planned; not implemented by the current networking root |
+| Private DNS, Private Endpoints, UDRs | Planned; not implemented by the current networking root |
+| Central monitoring and diagnostic settings | Planned; not implemented as a complete platform root |
+| Full security policy catalogue and subscription vending | Planned; not complete |
+
+No Azure deployment is performed by this repository review script. A successful
+local validation or CI run is not evidence that Azure resources have been deployed.

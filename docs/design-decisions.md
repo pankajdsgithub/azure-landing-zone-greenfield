@@ -272,3 +272,17 @@ Architecture decisions may be updated when implementation findings, security req
 
 All significant changes should be documented and reviewed through version control.
 
+## Landing-zone hierarchy clarification
+
+The target Tenant Root has exactly two direct children: `Platform` and
+`Landing Zones`. `Sandbox`, when enabled, is a child of `Landing Zones`, not a
+direct child of Tenant Root. `Management`, `Identity & Access`, `Connectivity`,
+and `Security` are children of `Platform`.
+
+## Deployment approval
+
+Production changes should use a manually dispatched GitHub Actions deployment
+workflow and a protected `production` environment with required reviewers.
+The plan and apply jobs must use the same saved plan artifact. Configure the
+environment's reviewers and Azure OIDC federation in GitHub/Azure settings;
+workflow YAML alone does not configure those controls.

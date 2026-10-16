@@ -38,3 +38,11 @@ __azurite_db_*.json
 __blobstorage__/
 __queuestorage__/
 __tablestorage__/
+
+# Local review backups and generated Python files
+__pycache__/
+*.py[cod]
+*.backup
+*.step2-backup
+*.pre-*
+*.cleanup-backup

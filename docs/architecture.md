@@ -141,3 +141,23 @@ The following decisions require confirmation before implementation:
 ## 10. Status
 
 This document is the initial target architecture. Actual implementation, test results, diagrams, and configuration will be updated as the project progresses.
+
+## Management-group hierarchy and implementation boundary
+
+The intended hierarchy has only two direct children under Tenant Root:
+`Platform` and `Landing Zones`.
+
+`Platform` contains the `Management`, `Identity & Access`, `Connectivity`, and
+`Security` management groups. `Landing Zones` contains `Corp`, `Online`, and
+optional `Sandbox`. Subscriptions are placed under the appropriate management
+groups; a subscription is not itself a management group.
+
+The repository currently implements a subset of this target. The management
+group root, basic RBAC roots, an Environment-tag audit policy, and basic hub/spoke
+networking are present. A complete security platform, centralized monitoring,
+Azure Firewall, gateways, Bastion, Private DNS, Private Endpoints, UDRs, and
+subscription vending must not be represented as deployed or implemented until
+the corresponding code and validation are added.
+
+The architecture diagram in `architecture/landing-zone-flow.mmd` shows the
+target management-group hierarchy, not a claim that every capability is deployed.

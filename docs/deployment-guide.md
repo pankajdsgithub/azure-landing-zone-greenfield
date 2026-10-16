@@ -179,3 +179,30 @@ This guide describes the intended implementation sequence. The exact Terraform c
 
 Do not apply production changes until the configuration, execution plan, access model, and rollback or recovery approach have been reviewed.
 
+## Production deployment guardrails
+
+The recommended production path is the separate GitHub Actions workflow
+`.github/workflows/terraform-deploy.yml`. It is manually dispatched from `main`,
+creates a saved Terraform plan, uploads that plan as an artifact, and requires
+the `production` GitHub Environment before the apply job can run.
+
+Before enabling it, configure:
+- A GitHub Environment named `production` with required reviewers.
+- Azure workload identity federation for GitHub OIDC. Configure federated
+  credentials for both the `main` branch plan job and the `production`
+  environment apply job, matching your repository and environment names.
+- Repository or environment variables for `AZURE_CLIENT_ID`,
+  `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `TF_STATE_RESOURCE_GROUP`,
+  `TF_STATE_STORAGE_ACCOUNT`, and `TF_STATE_CONTAINER`.
+- Any root-specific `TF_VAR_*` values needed by the selected Terraform root.
+- Azure RBAC for the federated identity, limited to the scopes it needs.
+
+The deployment workflow intentionally excludes the state-bootstrap root. Do not
+treat a state-bootstrap root as an ordinary workload deployment: it creates the
+backend on which other roots depend. Choose and document a separate initial-state
+and migration procedure before changing its backend configuration.
+
+The workflow is a deployment mechanism, not a guarantee that a plan is safe.
+Review the plan and its artifact, confirm the selected subscription and state key,
+and ensure the protected environment's reviewers are correctly configured.
+Do not store state files, plan files, credentials, or real `.tfvars` files in Git.

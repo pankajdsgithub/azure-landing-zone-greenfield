@@ -20,14 +20,14 @@ module "sandbox" {
 
   name                       = "mg-sandbox"
   display_name               = "Sandbox"
-  parent_management_group_id = var.tenant_root_management_group_id
+  parent_management_group_id = module.landing_zones.id
 }
 
 module "identity" {
   source = "../../modules/management-groups"
 
   name                       = "mg-identity"
-  display_name               = "Identity"
+  display_name               = "Identity & Access"
   parent_management_group_id = module.platform.id
 }
 

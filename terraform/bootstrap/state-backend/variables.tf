@@ -13,7 +13,7 @@ variable "location" {
 variable "resource_group_name" {
   description = "Dedicated resource group for Terraform state."
   type        = string
-  default     = "rg-tfstate-railconnect-ci"
+  default     = "rg-tfstate-example-ci"
 }
 
 variable "storage_account_name" {
