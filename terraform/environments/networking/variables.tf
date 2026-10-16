@@ -26,7 +26,7 @@ variable "hub_vnet_name" {
 }
 
 variable "hub_address_space" {
-  description = "Hub CIDRs; check for overlap with every connected network."
+  description = "Hub CIDRs; must not overlap the spoke or connected networks."
   type        = list(string)
   default     = ["10.40.0.0/16"]
 
@@ -71,6 +71,47 @@ variable "spoke_subnet_prefixes" {
   validation {
     condition     = length(var.spoke_subnet_prefixes) > 0 && alltrue([for cidr in var.spoke_subnet_prefixes : can(cidrhost(cidr, 0))])
     error_message = "spoke_subnet_prefixes must contain valid CIDR prefixes."
+  }
+}
+
+variable "nsg_rules" {
+  description = "Approved security rules applied to both hub and spoke NSGs."
+  type = list(object({
+    name                       = string
+    priority                   = number
+    direction                  = string
+    access                     = string
+    protocol                   = string
+    source_port_range          = string
+    destination_port_range     = string
+    source_address_prefix      = string
+    destination_address_prefix = string
+  }))
+
+  # Custom rules only. The mandatory Internet inbound deny is defined in main.tf.
+  default = []
+
+  validation {
+    condition = (
+      length(distinct([for rule in var.nsg_rules : rule.name])) == length(var.nsg_rules) &&
+      length(distinct([for rule in var.nsg_rules : rule.priority])) == length(var.nsg_rules) &&
+      alltrue([
+        for rule in var.nsg_rules :
+        length(rule.name) > 0 &&
+        rule.name != "Deny-Internet-Inbound" &&
+        rule.priority >= 100 && rule.priority <= 4096 &&
+        rule.priority != 4000 &&
+        floor(rule.priority) == rule.priority &&
+        contains(["Inbound", "Outbound"], rule.direction) &&
+        contains(["Allow", "Deny"], rule.access) &&
+        contains(["*", "Tcp", "Udp", "Icmp", "Esp", "Ah"], rule.protocol) &&
+        length(rule.source_port_range) > 0 &&
+        length(rule.destination_port_range) > 0 &&
+        length(rule.source_address_prefix) > 0 &&
+        length(rule.destination_address_prefix) > 0
+      ])
+    )
+    error_message = "NSG rules must have unique names/priorities, priorities 100-4096, supported direction/access/protocol values, and non-empty port/address fields."
   }
 }
 

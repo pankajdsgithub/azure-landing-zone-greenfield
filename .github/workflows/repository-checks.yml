@@ -51,6 +51,17 @@ jobs:
       - name: Validate governance environment
         run: terraform -chdir=terraform/environments/governance validate
 
+      - name: Initialize networking environment
+        run: terraform -chdir=terraform/environments/networking init -backend=false
+
+      - name: Validate networking environment
+        run: terraform -chdir=terraform/environments/networking validate
+
+      - name: Check networking CIDR validation
+        run: |
+          python3 -m py_compile scripts/validate-network-cidrs.py
+          python3 scripts/validate-network-cidrs.py --var-file terraform/environments/networking/terraform.tfvars.example --self-test
+
       - name: Initialize state backend bootstrap
         run: terraform -chdir=terraform/bootstrap/state-backend init -backend=false
 
@@ -65,6 +76,9 @@ jobs:
 
       - name: Lint governance environment
         run: tflint --chdir=terraform/environments/governance
+
+      - name: Lint networking environment
+        run: tflint --chdir=terraform/environments/networking
 
       - name: Lint state backend bootstrap
         run: tflint --chdir=terraform/bootstrap/state-backend
