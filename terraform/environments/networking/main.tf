@@ -24,6 +24,18 @@ resource "azurerm_network_security_group" "hub" {
   location            = azurerm_resource_group.network.location
   resource_group_name = azurerm_resource_group.network.name
   tags                = var.tags
+
+  security_rule {
+    name                       = "Deny-Internet-Inbound"
+    priority                   = 4000
+    direction                  = "Inbound"
+    access                     = "Deny"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "Internet"
+    destination_address_prefix = "*"
+  }
 }
 
 resource "azurerm_subnet_network_security_group_association" "hub" {
@@ -51,6 +63,18 @@ resource "azurerm_network_security_group" "spoke" {
   location            = azurerm_resource_group.network.location
   resource_group_name = azurerm_resource_group.network.name
   tags                = var.tags
+
+  security_rule {
+    name                       = "Deny-Internet-Inbound"
+    priority                   = 4000
+    direction                  = "Inbound"
+    access                     = "Deny"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "Internet"
+    destination_address_prefix = "*"
+  }
 }
 
 resource "azurerm_subnet_network_security_group_association" "spoke" {
@@ -64,6 +88,9 @@ resource "azurerm_virtual_network_peering" "hub_to_spoke" {
   virtual_network_name         = azurerm_virtual_network.hub.name
   remote_virtual_network_id    = azurerm_virtual_network.spoke.id
   allow_virtual_network_access = true
+  allow_forwarded_traffic      = false
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
 }
 
 resource "azurerm_virtual_network_peering" "spoke_to_hub" {
@@ -72,4 +99,7 @@ resource "azurerm_virtual_network_peering" "spoke_to_hub" {
   virtual_network_name         = azurerm_virtual_network.spoke.name
   remote_virtual_network_id    = azurerm_virtual_network.hub.id
   allow_virtual_network_access = true
+  allow_forwarded_traffic      = false
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
 }
