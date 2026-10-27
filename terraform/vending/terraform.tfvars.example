@@ -1,0 +1,13 @@
+# Copy to terraform.tfvars and replace every example value.
+subscription_name    = "sub-customer-acme-prod-ci"
+billing_scope_id     = "/providers/Microsoft.Billing/billingAccounts/REPLACE/billingProfiles/REPLACE/invoiceSections/REPLACE"
+workload             = "Production"
+management_group_id  = "mg-corp-prod" # Must be an existing MG ID; verify in your tenant.
+tags = {
+  customer       = "acme"
+  environment    = "prod"
+  cost_center    = "CC-0000"
+  owner          = "platform-team"
+  managed_by     = "terraform"
+  service        = "customer-platform"
+}

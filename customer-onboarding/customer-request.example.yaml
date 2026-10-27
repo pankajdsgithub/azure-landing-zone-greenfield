@@ -1,0 +1,27 @@
+# Intake data only; this file is not consumed automatically by Terraform.
+customer:
+  code: acme01
+  display_name: Example Customer
+  owner_team: platform-team
+  cost_center: CC-0000
+  environment: prod
+  workload_type: Corp # Corp | Online | Sandbox
+  region: centralindia
+  management_group_id: REPLACE_WITH_EXISTING_MG_ID
+billing:
+  billing_scope_id: REPLACE_WITH_APPROVED_BILLING_SCOPE
+  subscription_name: sub-acme01-prod-ci
+network:
+  address_space: REPLACE_FROM_IPAM
+  connectivity: hub-spoke
+  private_endpoints_required: true
+monitoring:
+  retention_days: 90
+  budget_amount: 1000
+  budget_currency: REPLACE_WITH_BILLING_CURRENCY
+  notification_group: cloud-ops@example.com
+security:
+  data_classification: internal
+  key_management: platform-approved
+  require_cmk: true
+  require_private_access: true

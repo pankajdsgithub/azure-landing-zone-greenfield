@@ -1,0 +1,20 @@
+# Populate only after the subscription-vending root has been reviewed/applied.
+subscription_id                = "00000000-0000-0000-0000-000000000000"
+location                       = "centralindia"
+customer_code                  = "acme01"
+environment                    = "prod"
+log_analytics_workspace_name   = "law-acme01-prod-ci-001"
+log_analytics_retention_days   = 90
+monthly_budget_amount          = 1000
+budget_contact_emails           = ["cloud-ops@example.com"]
+resource_groups = {
+  management = "rg-acme01-management-prod-ci"
+  network    = "rg-acme01-network-prod-ci"
+  security   = "rg-acme01-security-prod-ci"
+  workload   = "rg-acme01-workload-prod-ci"
+}
+tags = {
+  cost_center = "CC-0000"
+  owner       = "platform-team"
+  service     = "customer-platform"
+}

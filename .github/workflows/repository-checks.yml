@@ -115,7 +115,7 @@ jobs:
         with:
           directory: terraform
           framework: terraform
-          soft_fail: true
+          soft_fail: false
 
   structure:
     name: Validate repository structure
