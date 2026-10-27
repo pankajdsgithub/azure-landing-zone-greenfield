@@ -71,6 +71,42 @@ resource "azurerm_storage_account" "tfstate" {
   }
 }
 
+resource "azurerm_log_analytics_workspace" "state_logging" {
+  name                = "law-${var.storage_account_name}"
+  location            = azurerm_resource_group.tfstate.location
+  resource_group_name = azurerm_resource_group.tfstate.name
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
+  tags                = azurerm_resource_group.tfstate.tags
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "blob_logging" {
+  name                       = "blob-logging"
+  target_resource_id         = "${azurerm_storage_account.tfstate.id}/blobServices/default"
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.state_logging.id
+
+  enabled_log {
+    category = "StorageRead"
+  }
+
+  enabled_log {
+    category = "StorageWrite"
+  }
+
+  enabled_log {
+    category = "StorageDelete"
+  }
+
+  metric {
+    category = "Transaction"
+    enabled  = true
+  }
+}
+
 resource "azurerm_storage_container" "tfstate" {
   name                  = "tfstate"
   storage_account_id    = azurerm_storage_account.tfstate.id
