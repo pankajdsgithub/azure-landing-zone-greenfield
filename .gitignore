@@ -46,3 +46,6 @@ __pycache__/
 *.step2-backup
 *.pre-*
 *.cleanup-backup
+*.before-*
+*.backup-*
+*.zip
